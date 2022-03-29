@@ -1,4 +1,4 @@
-module github.com/RangelReale/ecapplog-go-poc1
+module github.com/RangelReale/ecapplog-go
 
 go 1.17
 

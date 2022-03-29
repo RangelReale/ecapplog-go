@@ -9,7 +9,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/RangelReale/ecapplog-go-poc1/internal"
+	"github.com/RangelReale/ecapplog-go/internal"
 )
 
 type Client struct {

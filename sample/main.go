@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/RangelReale/ecapplog-go-poc1"
+	"github.com/RangelReale/ecapplog-go"
 )
 
 func main() {
