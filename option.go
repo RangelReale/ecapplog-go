@@ -21,7 +21,8 @@ func WithBufferSize(bufferSize int) Option {
 }
 
 type logOptions struct {
-	source string
+	source          string
+	extraCategories []string
 }
 
 type LogOption func(*logOptions)
@@ -29,5 +30,11 @@ type LogOption func(*logOptions)
 func WithSource(source string) LogOption {
 	return func(lo *logOptions) {
 		lo.source = source
+	}
+}
+
+func WithExtraCategories(extraCategories []string) LogOption {
+	return func(lo *logOptions) {
+		lo.extraCategories = extraCategories
 	}
 }

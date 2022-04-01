@@ -192,11 +192,12 @@ func (c *Client) Log(time time.Time, priority Priority, category string, message
 
 	if c.isOpen {
 		c.inChan <- &cmdLog{
-			Time:     cmdTime{time},
-			Priority: priority,
-			Category: category,
-			Message:  message,
-			Source:   lo.source,
+			Time:            cmdTime{time},
+			Priority:        priority,
+			Category:        category,
+			Message:         message,
+			Source:          lo.source,
+			ExtraCategories: lo.extraCategories,
 		}
 	}
 }

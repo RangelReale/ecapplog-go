@@ -24,7 +24,8 @@ func main() {
 			w.Done()
 			c.Log(time.Now(), ecapplog.Priority_INFORMATION, "app", fmt.Sprintf("Second log: %d", i))
 			w.Done()
-			c.Log(time.Now(), ecapplog.Priority_ERROR, "app", fmt.Sprintf("Third log: %d", i))
+			c.Log(time.Now(), ecapplog.Priority_ERROR, "app", fmt.Sprintf("Third log: %d", i),
+				ecapplog.WithExtraCategories([]string{"app_third"}))
 			w.Done()
 
 			time.Sleep(time.Millisecond * 50)
