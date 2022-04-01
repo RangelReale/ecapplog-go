@@ -21,7 +21,7 @@ type cmdLog struct {
 	ExtraCategories []string `json:"extra_categories,omitempty"`
 }
 
-const cmdTimeFormat = "2006-01-02T15:04:05.999999999"
+const cmdTimeFormat = "2006-01-02T15:04:05.000000000"
 
 type cmdTime struct {
 	time.Time
