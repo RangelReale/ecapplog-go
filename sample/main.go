@@ -20,7 +20,8 @@ func main() {
 
 	go func() {
 		for i := 0; i < 100; i++ {
-			c.Log(time.Now(), ecapplog.Priority_DEBUG, "app", fmt.Sprintf("First log: %d", i))
+			c.Log(time.Now(), ecapplog.Priority_DEBUG, "app", fmt.Sprintf("First log: %d", i),
+				ecapplog.WithOriginalCategory("app.internal"))
 			w.Done()
 			c.Log(time.Now(), ecapplog.Priority_INFORMATION, "app", fmt.Sprintf("Second log: %d", i))
 			w.Done()
