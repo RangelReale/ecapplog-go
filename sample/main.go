@@ -13,13 +13,16 @@ func main() {
 	c.Open()
 	defer c.Close()
 
+	const amount = 100
+	const delay = time.Millisecond * 50
+
 	var w sync.WaitGroup
-	w.Add(100 * 3)
+	w.Add(amount * 3)
 
 	fmt.Printf("Sending logs...\n")
 
 	go func() {
-		for i := 0; i < 100; i++ {
+		for i := 0; i < amount; i++ {
 			c.Log(time.Now(), ecapplog.Priority_DEBUG, "app", fmt.Sprintf("First log: %d", i),
 				ecapplog.WithOriginalCategory("app.internal"))
 			w.Done()
@@ -29,7 +32,7 @@ func main() {
 				ecapplog.WithExtraCategories([]string{"app_third"}))
 			w.Done()
 
-			time.Sleep(time.Millisecond * 50)
+			time.Sleep(delay)
 		}
 	}()
 
