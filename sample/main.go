@@ -26,7 +26,8 @@ func main() {
 			c.Log(time.Now(), ecapplog.Priority_DEBUG, "app", fmt.Sprintf("First log: %d", i),
 				ecapplog.WithOriginalCategory("app.internal"))
 			w.Done()
-			c.Log(time.Now(), ecapplog.Priority_INFORMATION, "app", fmt.Sprintf("Second log: %d", i))
+			c.Log(time.Now(), ecapplog.Priority_INFORMATION, "app", fmt.Sprintf("Second log: %d", i),
+				ecapplog.WithBgColor("#f9f9f9"))
 			w.Done()
 			c.Log(time.Now(), ecapplog.Priority_ERROR, "app", fmt.Sprintf("Third log: %d", i),
 				ecapplog.WithExtraCategories([]string{"app_third"}))

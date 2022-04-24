@@ -24,6 +24,8 @@ type logOptions struct {
 	source           string
 	originalCategory string
 	extraCategories  []string
+	color            string
+	bgColor          string
 }
 
 type LogOption func(*logOptions)
@@ -43,5 +45,17 @@ func WithOriginalCategory(originalCategory string) LogOption {
 func WithExtraCategories(extraCategories []string) LogOption {
 	return func(lo *logOptions) {
 		lo.extraCategories = extraCategories
+	}
+}
+
+func WithColor(color string) LogOption {
+	return func(lo *logOptions) {
+		lo.color = color
+	}
+}
+
+func WithBgColor(bgColor string) LogOption {
+	return func(lo *logOptions) {
+		lo.bgColor = bgColor
 	}
 }

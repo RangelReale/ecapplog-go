@@ -199,6 +199,8 @@ func (c *Client) Log(time time.Time, priority Priority, category string, message
 			Source:           lo.source,
 			OriginalCategory: lo.originalCategory,
 			ExtraCategories:  lo.extraCategories,
+			Color:            lo.color,
+			BgColor:          lo.bgColor,
 		}
 	}
 }

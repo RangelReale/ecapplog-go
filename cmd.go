@@ -20,6 +20,8 @@ type cmdLog struct {
 	Source           string   `json:"source,omitempty"`
 	OriginalCategory string   `json:"original_category,omitempty"`
 	ExtraCategories  []string `json:"extra_categories,omitempty"`
+	Color            string   `json:"color,omitempty"`
+	BgColor          string   `json:"bgcolor,omitempty"`
 }
 
 const cmdTimeFormat = "2006-01-02T15:04:05.000"
