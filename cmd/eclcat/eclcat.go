@@ -13,9 +13,10 @@ import (
 )
 
 var (
-	app      = flag.String("app", "eclcat", "ecapplog app name")
-	category = flag.String("category", "ALL", "ecapplog category name")
-	split    = flag.String("split", "\\n", "split string (default=\\n")
+	app         = flag.String("app", "eclcat", "ecapplog app name")
+	category    = flag.String("category", "ALL", "ecapplog category name")
+	split       = flag.String("split", "\\n", "split string (default=\\n")
+	lineNumbers = flag.Bool("n", false, "show line numbers")
 )
 
 func main() {
@@ -60,8 +61,16 @@ func output(client *ecapplog.Client, r io.Reader) error {
 	default:
 		scanner.Split(SplitAt(*split))
 	}
+	lineno := 1
 	for scanner.Scan() {
-		client.Log(time.Now(), ecapplog.Priority_INFORMATION, *category, scanner.Text())
+		text := scanner.Text()
+		var opt []ecapplog.LogOption
+		if *lineNumbers {
+			opt = append(opt, ecapplog.WithSource(text))
+			text = fmt.Sprintf("%04d %s", lineno, text)
+		}
+		client.Log(time.Now(), ecapplog.Priority_INFORMATION, *category, text, opt...)
+		lineno++
 	}
 	return scanner.Err()
 }
