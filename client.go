@@ -16,10 +16,12 @@ type Client struct {
 	appname      string
 	address      string
 	bufferSize   int
+	flushOnClose bool
 	isOpen       bool
 	ringBuffer   *internal.RingBuffer
 	inChan       chan interface{}
 	outChan      chan interface{}
+	endChan      chan bool
 	cmdCtx       context.Context
 	cmdCtxCancel context.CancelFunc
 }
@@ -45,6 +47,7 @@ func (c *Client) Open() {
 	if !c.isOpen {
 		c.inChan = make(chan interface{})
 		c.outChan = make(chan interface{}, c.bufferSize)
+		c.endChan = make(chan bool)
 		c.cmdCtx, c.cmdCtxCancel = context.WithCancel(context.Background())
 		c.isOpen = true
 
@@ -56,15 +59,17 @@ func (c *Client) Open() {
 
 func (c *Client) Close() {
 	if c.isOpen {
+		c.isOpen = false
 		c.cmdCtxCancel()
+		<-c.endChan
 		close(c.inChan)
 
 		c.ringBuffer = nil
+		c.endChan = nil
 		c.outChan = nil
 		c.inChan = nil
 		c.cmdCtx = nil
 		c.cmdCtxCancel = nil
-		c.isOpen = false
 	}
 }
 
@@ -82,7 +87,7 @@ rfor:
 			defer conn.Close()
 
 			if conntcp, ok := conn.(*net.TCPConn); ok {
-				err = conntcp.SetNoDelay(false)
+				err = conntcp.SetNoDelay(true)
 				if err != nil {
 					return err
 				}
@@ -94,11 +99,12 @@ rfor:
 				return err
 			}
 
+		cfor:
 			for {
-				var err error
+				err = nil
 				select {
 				case <-c_cmdCtx.Done():
-					return nil
+					break cfor
 				case cmd := <-c_cmdChan:
 					switch xcmd := cmd.(type) {
 					case *cmdLog:
@@ -109,9 +115,29 @@ rfor:
 					if errors.Is(err, net.ErrClosed) {
 						return nil
 					}
-					return err
+					break cfor
 				}
 			}
+
+			if c.flushOnClose {
+			xfor:
+				for len(c_cmdChan) > 0 {
+					select {
+					case cmd := <-c_cmdChan:
+						switch xcmd := cmd.(type) {
+						case *cmdLog:
+							xerr := c.handleCmdLog(conn, xcmd)
+							if xerr != nil {
+								break xfor
+							}
+						}
+					case <-time.After(time.Second * 5):
+						break xfor
+					}
+				}
+			}
+
+			return err
 		}()
 		if err != nil {
 			c.handleError(err)
@@ -119,6 +145,7 @@ rfor:
 
 		select {
 		case <-c_cmdCtx.Done():
+			c.endChan <- true
 			break rfor
 		case <-time.After(time.Second * 5):
 			break

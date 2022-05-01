@@ -20,6 +20,12 @@ func WithBufferSize(bufferSize int) Option {
 	}
 }
 
+func WithFlushOnClose(flushOnClose bool) Option {
+	return func(c *Client) {
+		c.flushOnClose = flushOnClose
+	}
+}
+
 type logOptions struct {
 	source           string
 	originalCategory string
