@@ -12,3 +12,7 @@ const (
 	Priority_CRITICAL    Priority = "CRITICAL"
 	Priority_ERROR       Priority = "ERROR"
 )
+
+const (
+	CategoryDEFAULT = "DEFAULT"
+)

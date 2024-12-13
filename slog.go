@@ -40,7 +40,7 @@ func (l *SLogHandler) Handle(ctx context.Context, record slog.Record) error {
 		priority = Priority_ERROR
 	}
 
-	var category string
+	category := CategoryDEFAULT
 	if cat, ok := slogcommon.FindAttribute(attrs, l.groups, "category"); ok {
 		category = slogcommon.ValueToString(cat.Value)
 	}
