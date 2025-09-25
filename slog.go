@@ -86,9 +86,12 @@ func (l *SLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 		return l
 	}
 	return &SLogHandler{
-		client: l.client,
-		attrs:  slogcommon.AppendAttrsToGroup(l.groups, l.attrs, attrs...),
-		groups: l.groups,
+		client:        l.client,
+		attrs:         slogcommon.AppendAttrsToGroup(l.groups, l.attrs, attrs...),
+		groups:        l.groups,
+		customLevelFn: l.customLevelFn,
+		categoryKey:   l.categoryKey,
+		options:       l.options,
 	}
 }
 
@@ -97,9 +100,12 @@ func (l *SLogHandler) WithGroup(name string) slog.Handler {
 		return l
 	}
 	return &SLogHandler{
-		client: l.client,
-		attrs:  l.attrs,
-		groups: append(l.groups, name),
+		client:        l.client,
+		attrs:         l.attrs,
+		groups:        append(l.groups, name),
+		customLevelFn: l.customLevelFn,
+		categoryKey:   l.categoryKey,
+		options:       l.options,
 	}
 }
 
