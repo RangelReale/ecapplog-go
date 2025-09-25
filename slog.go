@@ -5,44 +5,46 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
+	"text/template"
 
 	slogcommon "github.com/samber/slog-common"
 )
 
 type SLogHandler struct {
-	client        *Client
-	attrs         []slog.Attr
-	groups        []string
-	categoryKey   string
-	customLevelFn func(slog.Level) Priority
-	options       slog.HandlerOptions
+	client  *Client
+	attrs   []slog.Attr
+	groups  []string
+	options slogHandlerOptions
 }
 
 func NewSLogHandler(client *Client, options ...SlogHandlerOption) *SLogHandler {
 	ret := &SLogHandler{
-		client:      client,
-		categoryKey: categoryKey,
-		options: slog.HandlerOptions{
-			AddSource: true,
-			Level:     slog.LevelDebug,
+		client: client,
+		options: slogHandlerOptions{
+			categoryKey: categoryKey,
+			options: slog.HandlerOptions{
+				AddSource: true,
+				Level:     slog.LevelDebug,
+			},
 		},
 	}
 	for _, option := range options {
-		option(ret)
+		option(&ret.options)
 	}
 	return ret
 }
 
 func (l *SLogHandler) Enabled(ctx context.Context, level slog.Level) bool {
 	minLevel := slog.LevelDebug
-	if l.options.Level != nil {
-		minLevel = l.options.Level.Level()
+	if l.options.options.Level != nil {
+		minLevel = l.options.options.Level.Level()
 	}
 	return level >= minLevel
 }
 
 func (l *SLogHandler) Handle(ctx context.Context, record slog.Record) error {
-	attrs := slogConverter(l.options, l.attrs, l.groups, &record)
+	attrs := slogConverter(l.options.options, l.attrs, l.groups, &record)
 
 	priority := Priority_INFORMATION
 	switch record.Level {
@@ -55,13 +57,13 @@ func (l *SLogHandler) Handle(ctx context.Context, record slog.Record) error {
 	case slog.LevelError:
 		priority = Priority_ERROR
 	default:
-		if l.customLevelFn != nil {
-			priority = l.customLevelFn(record.Level)
+		if l.options.customLevelFn != nil {
+			priority = l.options.customLevelFn(record.Level)
 		}
 	}
 
 	category := CategoryDEFAULT
-	if cat, ok := slogcommon.FindAttribute(attrs, l.groups, l.categoryKey); ok {
+	if cat, ok := slogcommon.FindAttribute(attrs, l.groups, l.options.categoryKey); ok {
 		category = slogcommon.ValueToString(cat.Value)
 	}
 
@@ -76,7 +78,32 @@ func (l *SLogHandler) Handle(ctx context.Context, record slog.Record) error {
 		}
 	}
 
-	l.client.Log(record.Time, priority, category, record.Message, options...)
+	message := record.Message
+	if l.options.messageTemplate != "" {
+		tpl, err := template.New("message").
+			Funcs(template.FuncMap{
+				"field": func(fieldName string) string {
+					if fv, ok := slogcommon.FindAttribute(attrs, l.groups, fieldName); ok {
+						return fv.String()
+					}
+					return ""
+				},
+			}).Parse(l.options.messageTemplate)
+		if err == nil {
+			var md strings.Builder
+			err = tpl.Execute(&md, map[string]any{
+				"message": message,
+			})
+			if err == nil {
+				message = md.String()
+			}
+		}
+		if err != nil {
+			message += fmt.Sprintf(" (template error: %s)", err)
+		}
+	}
+
+	l.client.Log(record.Time, priority, category, message, options...)
 
 	return nil
 }
@@ -86,12 +113,10 @@ func (l *SLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 		return l
 	}
 	return &SLogHandler{
-		client:        l.client,
-		attrs:         slogcommon.AppendAttrsToGroup(l.groups, l.attrs, attrs...),
-		groups:        l.groups,
-		customLevelFn: l.customLevelFn,
-		categoryKey:   l.categoryKey,
-		options:       l.options,
+		client:  l.client,
+		attrs:   slogcommon.AppendAttrsToGroup(l.groups, l.attrs, attrs...),
+		groups:  l.groups,
+		options: l.options,
 	}
 }
 
@@ -100,32 +125,43 @@ func (l *SLogHandler) WithGroup(name string) slog.Handler {
 		return l
 	}
 	return &SLogHandler{
-		client:        l.client,
-		attrs:         l.attrs,
-		groups:        append(l.groups, name),
-		customLevelFn: l.customLevelFn,
-		categoryKey:   l.categoryKey,
-		options:       l.options,
+		client:  l.client,
+		attrs:   l.attrs,
+		groups:  append(l.groups, name),
+		options: l.options,
 	}
 }
 
-type SlogHandlerOption func(*SLogHandler)
+type slogHandlerOptions struct {
+	categoryKey     string
+	messageTemplate string
+	customLevelFn   func(slog.Level) Priority
+	options         slog.HandlerOptions
+}
+
+type SlogHandlerOption func(*slogHandlerOptions)
 
 func WithSlogHandlerOptions(opts slog.HandlerOptions) SlogHandlerOption {
-	return func(handler *SLogHandler) {
+	return func(handler *slogHandlerOptions) {
 		handler.options = opts
 	}
 }
 
 func WithWithSlogHandlerCustomLevelFn(fn func(slog.Level) Priority) SlogHandlerOption {
-	return func(handler *SLogHandler) {
+	return func(handler *slogHandlerOptions) {
 		handler.customLevelFn = fn
 	}
 }
 
 func WithWithSlogHandlerCategoryKey(categoryKey string) SlogHandlerOption {
-	return func(handler *SLogHandler) {
+	return func(handler *slogHandlerOptions) {
 		handler.categoryKey = categoryKey
+	}
+}
+
+func WithSlogHandlerMessageTemplate(messageTemplate string) SlogHandlerOption {
+	return func(handler *slogHandlerOptions) {
+		handler.messageTemplate = messageTemplate
 	}
 }
 
