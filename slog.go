@@ -84,9 +84,13 @@ func (l *SLogHandler) Handle(ctx context.Context, record slog.Record) error {
 			Funcs(template.FuncMap{
 				"field": func(fieldName string) string {
 					if fv, ok := slogcommon.FindAttribute(attrs, l.groups, fieldName); ok {
-						return fv.String()
+						return fv.Value.String()
 					}
 					return ""
+				},
+				"hasField": func(fieldName string) bool {
+					_, ok := slogcommon.FindAttribute(attrs, l.groups, fieldName)
+					return ok
 				},
 			}).Parse(l.options.messageTemplate)
 		if err == nil {
