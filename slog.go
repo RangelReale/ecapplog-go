@@ -70,11 +70,25 @@ func (l *SLogHandler) Handle(ctx context.Context, record slog.Record) error {
 	var options []LogOption
 	if len(attrs) > 0 {
 		payload := slogcommon.AttrsToMap(attrs...)
+		var hasMsgField bool
+		if _, ok := payload["message"]; !ok {
+			payload["message"] = record.Message
+			hasMsgField = true
+		} else if _, ok := payload["source_message"]; !ok {
+			payload["source_message"] = record.Message
+			hasMsgField = true
+		}
 		payloadEnc, err := json.Marshal(payload)
 		if err != nil {
 			options = append(options, WithSource(fmt.Sprintf("failed to marshal attributes: %v", err)))
 		} else {
-			options = append(options, WithSource(fmt.Sprintf("%s %s", record.Message, string(payloadEnc))))
+			if hasMsgField {
+				options = append(options,
+					WithSource(string(payloadEnc)))
+			} else {
+				options = append(options,
+					WithSource(fmt.Sprintf("%s %s", record.Message, string(payloadEnc))))
+			}
 		}
 	}
 
